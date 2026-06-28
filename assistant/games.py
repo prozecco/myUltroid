@@ -17,7 +17,10 @@ import asyncio
 import re, uuid, operator
 from random import choice, shuffle
 
-from akipy.async_akipy import Akinator
+try:
+    from akipy.async_akipy import Akinator
+except ImportError:
+    Akinator = None
 from telethon.errors.rpcerrorlist import BotMethodInvalidError
 from telethon.events import Raw
 from telethon.tl.types import InputMediaPoll, Poll, PollAnswer, UpdateMessagePollVote
@@ -39,6 +42,8 @@ akipyLOGS = getLogger("akipy")
 
 @ultroid_cmd(pattern="akinator")
 async def akina(e):
+    if not Akinator:
+        return await e.eor("`Please install 'akipy' to play Akinator.`", time=5)
     sta = Akinator()
     games[e.chat_id] = {e.id: sta}
     LOGS.info(f"Game started for chat {e.chat_id} with ID {e.id}.")

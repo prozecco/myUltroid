@@ -38,7 +38,7 @@ class Var:
     )
     # extras
     BOT_TOKEN = config("BOT_TOKEN", default=None)
-    LOG_CHANNEL = config("LOG_CHANNEL", default=0, cast=int)
+    LOG_CHANNEL = config("LOG_CHANNEL", default=0, cast=lambda x: int(x) if (x and str(x).strip()) else 0)
     HEROKU_APP_NAME = config("HEROKU_APP_NAME", default=None)
     HEROKU_API = config("HEROKU_API", default=None)
     VC_SESSION = config("VC_SESSION", default=None)

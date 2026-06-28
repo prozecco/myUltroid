@@ -8,6 +8,18 @@
 import ast
 import os
 import sys
+import builtins
+
+# Monkeypatch builtins.open to force UTF-8 encoding for JSON/database files on Windows
+original_open = builtins.open
+
+def custom_open(*args, **kwargs):
+    if len(args) > 0 and isinstance(args[0], str) and (args[0].endswith(".json") or "ultroid" in args[0]):
+        if "encoding" not in kwargs:
+            kwargs["encoding"] = "utf-8"
+    return original_open(*args, **kwargs)
+
+builtins.open = custom_open
 
 from .. import run_as_module
 from . import *
@@ -22,28 +34,28 @@ if Var.REDIS_URI or Var.REDISHOST:
         from redis import Redis
     except ImportError:
         LOGS.info("Installing 'redis' for database.")
-        os.system(f"{sys.executable} -m pip install -q redis hiredis")
+        os.system(f'"{sys.executable}" -m pip install -q redis hiredis')
         from redis import Redis
 elif Var.MONGO_URI:
     try:
         from pymongo import MongoClient
     except ImportError:
         LOGS.info("Installing 'pymongo' for database.")
-        os.system(f"{sys.executable} -m pip install -q pymongo[srv]")
+        os.system(f'"{sys.executable}" -m pip install -q pymongo[srv]')
         from pymongo import MongoClient
 elif Var.DATABASE_URL:
     try:
         import psycopg2
     except ImportError:
         LOGS.info("Installing 'pyscopg2' for database.")
-        os.system(f"{sys.executable} -m pip install -q psycopg2-binary")
+        os.system(f'"{sys.executable}" -m pip install -q psycopg2-binary')
         import psycopg2
 else:
     try:
         from localdb import Database
     except ImportError:
         LOGS.info("Using local file as database.")
-        os.system(f"{sys.executable} -m pip install -q localdb.json")
+        os.system(f'"{sys.executable}" -m pip install -q localdb.json')
         from localdb import Database
 
 # --------------------------------------------------------------------------------------------- #
@@ -253,7 +265,16 @@ class RedisDB(_BaseDatabase):
         *args,
         **kwargs,
     ):
-        if host and ":" in host:
+        if host and "redis://" in host:
+            from urllib.parse import urlparse
+            parsed = urlparse(host)
+            host = parsed.hostname
+            port = parsed.port or 6379
+            if parsed.password:
+                password = parsed.password
+            if parsed.path and parsed.path.strip("/").isdigit():
+                kwargs["db"] = int(parsed.path.strip("/"))
+        elif host and ":" in host:
             spli_ = host.split(":")
             host = spli_[0]
             port = int(spli_[-1])

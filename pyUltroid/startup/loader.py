@@ -121,11 +121,6 @@ def load_other_plugins(addons=None, pmbot=None, manager=None, vcbot=None):
         try:
             import pytgcalls  # ignore: pylint
 
-            if os.path.exists("vcbot"):
-                if os.path.exists("vcbot/.git"):
-                    subprocess.run("cd vcbot && git pull", shell=True)
-                else:
-                    rmtree("vcbot")
             if not os.path.exists("vcbot"):
                 subprocess.run(
                     "git clone https://github.com/TeamUltroid/VcBot vcbot", shell=True
